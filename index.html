@@ -1,17 +1,253 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Campus Placement Management System</title><style>body{margin:0;font-family:Arial;background:#f4f6fa;color:#222}nav{background:#172033;color:#fff;padding:16px 8%;display:flex;gap:15px;align-items:center}nav h2{margin-right:auto;margin-top:0;margin-bottom:0}.wrap{max-width:1100px;margin:auto;padding:30px}.card{background:#fff;padding:20px;margin:15px 0;border-radius:10px;box-shadow:0 2px 10px #ddd}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}input,select{width:100%;box-sizing:border-box;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:5px}button{background:#2563eb;color:#fff;border:0;border-radius:6px;padding:10px 15px;cursor:pointer}.auth{max-width:430px;margin:55px auto}.status{background:#dbeafe;padding:5px 10px;border-radius:14px;font-weight:bold}.hidden{display:none}table{width:100%;border-collapse:collapse}td,th{padding:10px;border-bottom:1px solid #ddd;text-align:left}.danger{background:#dc2626}.secondary{background:#64748b}</style></head><body><nav><h2>🎓 Placement Portal</h2><span id="info"></span><button id="logout" class="hidden" onclick="out()">Logout</button></nav><div id="app"></div><script>
-let users=JSON.parse(localStorage.users||'[]'),companies=JSON.parse(localStorage.companies||'[]'),apps=JSON.parse(localStorage.apps||'[]'),current=JSON.parse(localStorage.current||'null');
-if(!companies.length)companies=[{id:1,n:'TCS',r:'Software Developer',l:'Noida',p:'7',e:'60% or above'},{id:2,n:'Infosys',r:'Systems Engineer',l:'Bangalore',p:'6.5',e:'No active backlogs'},{id:3,n:'Wipro',r:'Project Engineer',l:'Gurugram',p:'5.5',e:'60% or above'}];
-function save(){localStorage.users=JSON.stringify(users);localStorage.companies=JSON.stringify(companies);localStorage.apps=JSON.stringify(apps);localStorage.current=JSON.stringify(current)}
-const g=x=>document.getElementById(x);
-function render(){g('info').textContent=current?'Welcome, '+current.name+' ('+current.role+')':'';g('logout').className=current?'':'hidden';if(!current){g('app').innerHTML='<div class="auth card"><h2>Campus Placement System</h2><input id="name" placeholder="Full Name"><input id="email" placeholder="Email"><input id="pass" type="password" placeholder="Password"><select id="role"><option>STUDENT</option><option>ADMIN</option></select><button onclick="reg()">Register</button> <button class="secondary" onclick="login()">Login</button><p>Create an Admin account to add companies, then a Student account to apply.</p></div>';return}current.role==='ADMIN'?admin():student()}
-function reg(){let name=g('name').value,email=g('email').value,pass=g('pass').value,role=g('role').value;if(!name||!email||!pass)return alert('Fill all fields');if(users.some(u=>u.email===email))return alert('Email already registered');current={id:Date.now(),name,email,pass,role};users.push(current);save();render()}
-function login(){let u=users.find(u=>u.email===g('email').value&&u.pass===g('pass').value);if(!u)return alert('Invalid login. Register first.');current=u;save();render()}
-function out(){current=null;save();render()}
-function cards(ad){return companies.map(c=>'<div class="card"><h2>'+c.n+'</h2><p><b>Role:</b> '+c.r+'</p><p><b>Location:</b> '+c.l+'</p><p><b>Package:</b> '+c.p+' LPA</p><p><b>Eligibility:</b> '+c.e+'</p>'+(ad?'<button class="danger" onclick="del('+c.id+')">Delete</button>':'<button onclick="apply('+c.id+')">Apply Now</button>')+'</div>').join('')}
-function student(){let mine=apps.filter(a=>a.sid===current.id);g('app').innerHTML='<div class="wrap"><h1>Find Your Dream Opportunity 🚀</h1><div class="grid">'+cards(false)+'</div><h2>My Applications</h2><div class="card">'+(mine.length?mine.map(a=>{let c=companies.find(c=>c.id===a.cid);return '<p><b>'+c.n+'</b> — <span class="status">'+a.status+'</span></p>'}).join(''):'No applications yet.')+'</div></div>'}
-function apply(cid){if(apps.some(a=>a.sid===current.id&&a.cid===cid))return alert('Already applied');apps.push({id:Date.now(),sid:current.id,cid,status:'APPLIED'});save();alert('Application submitted successfully!');render()}
-function admin(){let rows=apps.map(a=>{let s=users.find(u=>u.id===a.sid)||{name:'Unknown'},c=companies.find(c=>c.id===a.cid)||{n:'Removed'};return '<tr><td>'+s.name+'</td><td>'+c.n+'</td><td><select onchange="status('+a.id+',this.value)">'+['APPLIED','SHORTLISTED','SELECTED','REJECTED'].map(x=>'<option '+(x===a.status?'selected':'')+'>'+x+'</option>').join('')+'</select></td></tr>'}).join('');g('app').innerHTML='<div class="wrap"><div class="card"><h2>Admin Dashboard</h2><input id="cn" placeholder="Company Name"><input id="cr" placeholder="Job Role"><input id="cl" placeholder="Location"><input id="cp" placeholder="Package (LPA)"><input id="ce" placeholder="Eligibility"><button onclick="add()">Add Company</button></div><h2>Companies</h2><div class="grid">'+cards(true)+'</div><h2>Student Applications</h2><div class="card">'+(rows?'<table><tr><th>Student</th><th>Company</th><th>Status</th></tr>'+rows+'</table>':'No applications yet.')+'</div></div>'}
-function add(){let v=['cn','cr','cl','cp','ce'].map(x=>g(x).value);if(v.some(x=>!x))return alert('Fill all details');companies.push({id:Date.now(),n:v[0],r:v[1],l:v[2],p:v[3],e:v[4]});save();render()}
-function del(id){companies=companies.filter(c=>c.id!==id);save();render()}
-function status(id,v){apps.find(a=>a.id===id).status=v;save();render()}render();
-</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#172033">
+  <title>Campus Placement Portal</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #172033; background: #f3f6fb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; }
+    nav { display: flex; align-items: center; gap: 1rem; padding: 1rem max(1rem, calc((100vw - 1100px) / 2)); background: #172033; color: white; }
+    nav .muted { color: #cbd5e1; }
+    nav h1 { margin: 0 auto 0 0; font-size: 1.15rem; }
+    main { width: min(1100px, calc(100% - 2rem)); margin: 2rem auto; }
+    .auth { width: min(440px, 100%); margin: 4rem auto; }
+    .card { padding: 1.25rem; margin: 1rem 0; border: 1px solid #e5eaf2; border-radius: 14px; background: white; box-shadow: 0 6px 22px #1720330c; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+    label { display: block; margin: .8rem 0 .25rem; font-size: .9rem; font-weight: 650; }
+    input, select { width: 100%; padding: .75rem; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; background: white; }
+    button { padding: .7rem 1rem; border: 0; border-radius: 8px; background: #2563eb; color: white; font: inherit; font-weight: 650; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    button.secondary { background: #64748b; }
+    button.danger { background: #dc2626; }
+    form button { margin-top: 1rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+    .muted { color: #64748b; }
+    .message { min-height: 1.4rem; color: #b91c1c; }
+    .badge { display: inline-block; padding: .25rem .6rem; border-radius: 999px; background: #dbeafe; color: #1e40af; font-size: .85rem; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: .75rem; border-bottom: 1px solid #e5eaf2; text-align: left; vertical-align: top; }
+    @media (max-width: 600px) { nav { padding: 1rem; } main { margin-top: 1rem; } th, td { padding: .5rem .25rem; } }
+  </style>
+</head>
+<body>
+  <nav>
+    <h1>🎓 Campus Placement Portal</h1>
+    <span id="user-label" class="muted"></span>
+    <button id="logout" class="secondary" hidden>Log out</button>
+  </nav>
+  <main id="app" aria-live="polite"></main>
+  <script>
+    const app = document.querySelector('#app');
+    const userLabel = document.querySelector('#user-label');
+    const logoutButton = document.querySelector('#logout');
+    let currentUser = null;
+
+    async function api(path, options = {}) {
+      const response = await fetch(`/api${path}`, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+        body: options.body === undefined ? undefined : JSON.stringify(options.body),
+        credentials: 'same-origin'
+      });
+      const data = response.status === 204 ? null : await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Something went wrong.');
+      return data;
+    }
+
+    function node(tag, text, className) {
+      const element = document.createElement(tag);
+      if (text !== undefined) element.textContent = text;
+      if (className) element.className = className;
+      return element;
+    }
+
+    function field(form, labelText, name, type = 'text', required = true) {
+      const label = node('label', labelText);
+      const input = document.createElement('input');
+      input.name = name;
+      input.type = type;
+      input.required = required;
+      if (type === 'password') input.autocomplete = name === 'password' ? 'new-password' : 'off';
+      if (name === 'email') input.autocomplete = 'email';
+      label.append(input);
+      form.append(label);
+      return input;
+    }
+
+    function showMessage(target, message) {
+      target.textContent = message;
+    }
+
+    async function refresh() {
+      try {
+        const session = await api('/session');
+        currentUser = session.user;
+        userLabel.textContent = currentUser ? `${currentUser.name} · ${currentUser.role}` : '';
+        logoutButton.hidden = !currentUser;
+        if (!currentUser) renderAuth();
+        else if (currentUser.role === 'ADMIN') await renderAdmin();
+        else await renderStudent();
+      } catch (error) {
+        app.replaceChildren(node('section', error.message, 'card'));
+      }
+    }
+
+    function renderAuth() {
+      app.replaceChildren();
+      const card = node('section', undefined, 'card auth');
+      card.append(node('h2', 'Campus Placement System'));
+      card.append(node('p', 'Sign in or create a student account.', 'muted'));
+      const message = node('p', '', 'message');
+      const tabs = node('div', undefined, 'actions');
+      const loginTab = node('button', 'Log in');
+      const registerTab = node('button', 'Register', 'secondary');
+      tabs.append(loginTab, registerTab);
+      card.append(tabs, message);
+
+      function setForm(mode) {
+        card.querySelector('form')?.remove();
+        const form = document.createElement('form');
+        const isRegister = mode === 'register';
+        if (isRegister) field(form, 'Full name', 'name');
+        field(form, 'Email', 'email', 'email').autocomplete = 'username';
+        field(form, 'Password', 'password', 'password').autocomplete = isRegister ? 'new-password' : 'current-password';
+        let role;
+        let adminCode;
+        if (isRegister) {
+          const roleLabel = node('label', 'Account type');
+          role = document.createElement('select');
+          role.name = 'role';
+          for (const [value, label] of [['STUDENT', 'Student'], ['ADMIN', 'Admin']]) {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = label;
+            role.append(option);
+          }
+          roleLabel.append(role);
+          form.append(roleLabel);
+          adminCode = field(form, 'Admin invite code (required for admin)', 'adminCode', 'password', false);
+          role.addEventListener('change', () => { adminCode.required = role.value === 'ADMIN'; });
+        }
+        const submit = node('button', isRegister ? 'Create account' : 'Log in');
+        submit.type = 'submit';
+        form.append(submit);
+        form.addEventListener('submit', async event => {
+          event.preventDefault();
+          showMessage(message, '');
+          const values = Object.fromEntries(new FormData(form));
+          try {
+            const user = await api(isRegister ? '/register' : '/login', { method: 'POST', body: values });
+            currentUser = user;
+            await refresh();
+          } catch (error) { showMessage(message, error.message); }
+        });
+        card.append(form);
+        loginTab.className = mode === 'login' ? '' : 'secondary';
+        registerTab.className = mode === 'register' ? '' : 'secondary';
+      }
+      loginTab.addEventListener('click', () => setForm('login'));
+      registerTab.addEventListener('click', () => setForm('register'));
+      app.append(card);
+      setForm('login');
+    }
+
+    async function renderStudent() {
+      const [companies, applications] = await Promise.all([api('/companies'), api('/applications')]);
+      app.replaceChildren();
+      app.append(node('h2', 'Placement opportunities'));
+      const grid = node('div', undefined, 'grid');
+      for (const company of companies) {
+        const card = node('article', undefined, 'card');
+        card.append(node('h3', company.name), node('p', `Role: ${company.role}`), node('p', `Location: ${company.location}`), node('p', `Package: ${company.package} LPA`), node('p', `Eligibility: ${company.eligibility}`));
+        const apply = node('button', 'Apply now');
+        apply.disabled = applications.some(item => item.companyId === company.id);
+        if (apply.disabled) apply.textContent = 'Already applied';
+        apply.addEventListener('click', async () => {
+          try { await api('/applications', { method: 'POST', body: { companyId: company.id } }); await refresh(); }
+          catch (error) { window.alert(error.message); }
+        });
+        card.append(apply);
+        grid.append(card);
+      }
+      app.append(grid, node('h2', 'My applications'));
+      const list = node('section', undefined, 'card');
+      if (!applications.length) list.append(node('p', 'No applications yet.', 'muted'));
+      for (const item of applications) {
+        const row = node('p');
+        row.append(node('strong', item.companyName), document.createTextNode(' · '), node('span', item.status, 'badge'));
+        list.append(row);
+      }
+      app.append(list);
+    }
+
+    async function renderAdmin() {
+      const [companies, applications] = await Promise.all([api('/companies'), api('/applications')]);
+      app.replaceChildren(node('h2', 'Admin dashboard'));
+      const formCard = node('section', undefined, 'card');
+      formCard.append(node('h3', 'Add a placement'));
+      const form = document.createElement('form');
+      field(form, 'Company name', 'name');
+      field(form, 'Job role', 'role');
+      field(form, 'Location', 'location');
+      field(form, 'Package (LPA)', 'package');
+      field(form, 'Eligibility', 'eligibility');
+      const add = node('button', 'Add company'); add.type = 'submit'; form.append(add);
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        try { await api('/companies', { method: 'POST', body: Object.fromEntries(new FormData(form)) }); await refresh(); }
+        catch (error) { window.alert(error.message); }
+      });
+      formCard.append(form);
+      app.append(formCard, node('h2', 'Companies'));
+      const grid = node('div', undefined, 'grid');
+      for (const company of companies) {
+        const card = node('article', undefined, 'card');
+        card.append(node('h3', company.name), node('p', `Role: ${company.role}`), node('p', `${company.location} · ${company.package} LPA`), node('p', `Eligibility: ${company.eligibility}`));
+        const remove = node('button', 'Delete', 'danger');
+        remove.addEventListener('click', async () => {
+          if (!window.confirm(`Delete ${company.name}?`)) return;
+          try { await api(`/companies/${company.id}`, { method: 'DELETE' }); await refresh(); }
+          catch (error) { window.alert(error.message); }
+        });
+        card.append(remove);
+        grid.append(card);
+      }
+      app.append(grid, node('h2', 'Student applications'));
+      const tableWrap = node('section', undefined, 'card');
+      if (!applications.length) tableWrap.append(node('p', 'No applications yet.', 'muted'));
+      else {
+        const table = document.createElement('table');
+        const head = document.createElement('tr');
+        for (const label of ['Student', 'Company', 'Status']) head.append(node('th', label));
+        const thead = document.createElement('thead'); thead.append(head); table.append(thead);
+        const tbody = document.createElement('tbody');
+        for (const item of applications) {
+          const row = document.createElement('tr');
+          row.append(node('td', item.studentName), node('td', item.companyName));
+          const cell = document.createElement('td');
+          const select = document.createElement('select');
+          for (const status of ['APPLIED', 'SHORTLISTED', 'SELECTED', 'REJECTED']) {
+            const option = document.createElement('option'); option.value = status; option.textContent = status; option.selected = status === item.status; select.append(option);
+          }
+          select.addEventListener('change', async () => {
+            try { await api(`/applications/${item.id}`, { method: 'PATCH', body: { status: select.value } }); }
+            catch (error) { window.alert(error.message); await refresh(); }
+          });
+          cell.append(select); row.append(cell); tbody.append(row);
+        }
+        table.append(tbody); tableWrap.append(table);
+      }
+      app.append(tableWrap);
+    }
+
+    logoutButton.addEventListener('click', async () => {
+      try { await api('/logout', { method: 'POST', body: {} }); currentUser = null; await refresh(); }
+      catch (error) { window.alert(error.message); }
+    });
+    refresh();
+  </script>
+</body>
+</html>
